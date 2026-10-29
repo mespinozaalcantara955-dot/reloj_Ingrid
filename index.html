@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Feliz Aniversario</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;700&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+<style>
+  :root { --vino:#7a0f2b; --carmesi:#ff3b5c; --oro:#f4c2b0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%; background: #000; color: var(--oro);
+    font-family: 'Montserrat', sans-serif; overflow: hidden;
+  }
+
+  /* ---------- VISTAS ---------- */
+  .vista {
+    position: fixed; inset: 0; background: #000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity .9s ease, visibility .9s ease;
+  }
+  .oculta { opacity: 0; visibility: hidden; pointer-events: none; }
+
+  /* ---------- RELOJ DE CORAZÓN ---------- */
+  .corazon {
+    --s: min(90vw, 62vh, 520px);   /* tamaño del reloj */
+    position: relative;
+    width: var(--s);
+    height: var(--s);
+  }
+  .corazon img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; user-select: none;
+    mix-blend-mode: lighten;       /* el negro de la imagen se funde con el fondo */
+  }
+
+  /* Contador dentro de la zona blanca del corazón */
+  .contador {
+    position: absolute;
+    left: 26%; width: 48%;
+    top: 36%; height: 40%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: calc(var(--s) * .02);
+  }
+  .contador small {
+    font-size: calc(var(--s) * .022); font-weight: 700;
+    letter-spacing: .25em; text-transform: uppercase; color: #b0203f;
+  }
+  .fila { display: flex; gap: calc(var(--s) * .04); }
+  .unidad { display: flex; flex-direction: column; align-items: center; min-width: 2.2ch; }
+  .unidad b {
+    font-weight: 700; font-size: calc(var(--s) * .07);
+    color: var(--vino); font-variant-numeric: tabular-nums; line-height: 1.1;
+  }
+  .unidad span {
+    font-size: calc(var(--s) * .02); font-weight: 500;
+    letter-spacing: .12em; text-transform: uppercase; color: #b0203f;
+  }
+
+  /* ---------- BOTÓN "FELIZ ANIVERSARIO" ---------- */
+  .feliz {
+    margin-top: clamp(1rem, 3vh, 2rem);
+    background: none; border: none; cursor: pointer;
+    font-family: 'Playfair Display', serif; font-style: italic; font-weight: 600;
+    font-size: clamp(1.8rem, 8vw, 3rem);
+    color: var(--oro); text-shadow: 0 0 12px rgba(255,59,92,.7);
+    position: relative;
+    transition: transform .35s ease, text-shadow .35s ease, color .35s ease;
+  }
+  .feliz::after {
+    content: ""; position: absolute; left: 50%; bottom: -6px;
+    width: 0; height: 2px; background: var(--carmesi); box-shadow: 0 0 10px var(--carmesi);
+    transition: width .4s ease, left .4s ease;
+  }
+  .feliz:hover, .feliz:focus-visible {
+    transform: scale(1.06); color: #fff;
+    text-shadow: 0 0 18px var(--carmesi), 0 0 38px var(--carmesi); outline: none;
+  }
+  .feliz:hover::after, .feliz:focus-visible::after { width: 100%; left: 0; }
+
+  /* ---------- CARTA (IMAGEN DE CANVA) ---------- */
+  #vistaCarta img.carta { width: 100%; height: 100%; object-fit: contain; background: #000; }
+  .regresar {
+    position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); left: 12px; z-index: 10;
+    padding: .55rem 1.1rem; border-radius: 999px;
+    background: rgba(0,0,0,.75); color: var(--oro); border: 1px solid var(--carmesi);
+    font-family: 'Montserrat', sans-serif; font-size: .8rem; letter-spacing: .1em;
+    cursor: pointer; backdrop-filter: blur(6px); box-shadow: 0 0 12px rgba(255,59,92,.45);
+    transition: background .3s, color .3s;
+  }
+  .regresar:hover { background: var(--carmesi); color: #fff; }
+</style>
+</head>
+<body>
+
+  <!-- VISTA 1: RELOJ -->
+  <main id="vistaReloj" class="vista">
+    <div class="corazon">
+      <img src="/static/reloj.jpeg" alt="Reloj de corazón">
+      <div class="contador">
+        <small>Juntos desde hace</small>
+        <div class="fila">
+          <div class="unidad"><b id="meses">0</b><span>Meses</span></div>
+          <div class="unidad"><b id="dias">0</b><span>Días</span></div>
+        </div>
+        <div class="fila">
+          <div class="unidad"><b id="horas">00</b><span>Horas</span></div>
+          <div class="unidad"><b id="minutos">00</b><span>Min</span></div>
+          <div class="unidad"><b id="segundos">00</b><span>Seg</span></div>
+        </div>
+      </div>
+    </div>
+    <button id="btnFeliz" class="feliz" type="button">Feliz Aniversario</button>
+  </main>
+
+  <!-- VISTA 2: TU IMAGEN DE CANVA (static/carta.png) -->
+  <section id="vistaCarta" class="vista oculta">
+    <button id="btnRegresar" class="regresar" type="button">← Regresar</button>
+    <img class="carta" src="/static/carta.png" alt="Carta de aniversario">
+  </section>
+
+<script>
+  // Fecha de inicio: 29 de julio de 2026 (en JS julio = 6)
+  const INICIO = new Date(2026, 6, 29, 0, 0, 0);
+
+  const $ = id => document.getElementById(id);
+  const pad = n => String(n).padStart(2, "0");
+
+  function sumarMeses(fecha, m) {
+    const d = new Date(fecha);
+    const dia = d.getDate();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + m);
+    const ultimo = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(dia, ultimo));
+    return d;
+  }
+
+  function actualizar() {
+    const ahora = new Date();
+    if (ahora < INICIO) {
+      ["meses","dias","horas","minutos","segundos"].forEach(id => $(id).textContent = "0");
+      return;
+    }
+    let meses = (ahora.getFullYear() - INICIO.getFullYear()) * 12 + (ahora.getMonth() - INICIO.getMonth());
+    if (sumarMeses(INICIO, meses) > ahora) meses--;
+    let resto = ahora - sumarMeses(INICIO, meses);
+    const dias = Math.floor(resto / 86400000); resto %= 86400000;
+    const horas = Math.floor(resto / 3600000); resto %= 3600000;
+    const minutos = Math.floor(resto / 60000); resto %= 60000;
+    const segundos = Math.floor(resto / 1000);
+
+    $("meses").textContent = meses;
+    $("dias").textContent = dias;
+    $("horas").textContent = pad(horas);
+    $("minutos").textContent = pad(minutos);
+    $("segundos").textContent = pad(segundos);
+  }
+  actualizar();
+  setInterval(actualizar, 1000);
+
+  // Transición entre vistas
+  const reloj = $("vistaReloj"), carta = $("vistaCarta");
+
+  $("btnFeliz").addEventListener("click", () => {
+    reloj.classList.add("oculta");
+    setTimeout(() => carta.classList.remove("oculta"), 700);
+  });
+  $("btnRegresar").addEventListener("click", () => {
+    carta.classList.add("oculta");
+    setTimeout(() => reloj.classList.remove("oculta"), 700);
+  });
+</script>
+</body>
+</html>
